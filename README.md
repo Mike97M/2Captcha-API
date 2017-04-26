@@ -29,7 +29,7 @@ string result = api.solveReCaptcha(SITE_KEY,SITE_URL);
 ## Report incorrect captcha
 ```
 TwoCaptchaApi 2captcha = new TwoCaptchaApi(<API_KEY>);
-float balance = 2captcha.reportBadCaptcha(2captcha.captchaId);
+bool reported = 2captcha.reportBadCaptcha(2captcha.captchaId);
 
 ```
 
