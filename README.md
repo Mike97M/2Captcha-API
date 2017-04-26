@@ -26,10 +26,10 @@ string result = api.solveReCaptcha(SITE_KEY,SITE_URL);
 ```
 
 
-## Get Account Balance
+## Report incorrect captcha
 ```
 TwoCaptchaApi 2captcha = new TwoCaptchaApi(<API_KEY>);
-float balance = 2captcha.getBalance();
+float balance = 2captcha.reportBadCaptcha(2captcha.captchaId);
 
 ```
 
