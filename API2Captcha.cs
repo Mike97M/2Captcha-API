@@ -106,7 +106,7 @@ namespace API2Captcha
         private string getResult(string captchaId)
         {
             string response = "";
-            for (int i = 0; i <= 10; i++)
+            for (int i = 0; i <= 20; i++)
             {
                 using (WebClient client = new WebClient())
                 {
