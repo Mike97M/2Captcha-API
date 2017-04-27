@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -8,39 +8,35 @@ namespace API2Captcha
 {
     public class TwoCaptchaApi
     {
-        string key = null;
-        public string captchaId;
+        private string key;
+        private string captchaId;
         public TwoCaptchaApi(string key)
         {
             this.key = key;
         }
 
-        public float getBalance()
+        public float GetBalance()
         {
             string response = "";
-
-            using (WebClient client = new WebClient())
+            try
             {
-                client.QueryString.Add("key", key);
-                client.QueryString.Add("action", "getbalance");
-                response = client.DownloadString(settings.url_response);
+                using (WebClient client = new WebClient())
+                {
+                    client.QueryString.Add("key", key);
+                    client.QueryString.Add("action", "getbalance");
+                    response = client.DownloadString(settings.url_response);
+
+                    return float.Parse(response);
+                }
             }
-
-
-            float balance = -1;
-
-            if (!float.TryParse(response, out balance))
+            catch (Exception ex)
             {
-                throw new Exception($"2Captcha - Error while checking balance: {response}");
 
+                throw new BalanceException(response, ex);
             }
-            return balance;
-
-
-
         }
 
-        public string solveReCaptcha(string googleKey, string pageUrl)
+        public string SolveReCaptcha(string googleKey, string pageUrl)
         {
             captchaId = sendReCaptcha(googleKey, pageUrl);
             Thread.Sleep(15 * 1000);
@@ -52,22 +48,38 @@ namespace API2Captcha
 
         private string sendReCaptcha(string googleKey, string pageUrl)
         {
-            string response = "";
+
             using (WebClient client = new WebClient())
             {
                 client.QueryString.Add("key", key);
                 client.QueryString.Add("method", "userrecaptcha");
                 client.QueryString.Add("googlekey", googleKey);
                 client.QueryString.Add("pageurl", pageUrl);
-                response = client.DownloadString(settings.url_request);
+                string response = client.DownloadString(settings.url_request);
+                return processResponse(response, "ReCaptcha sending error");
             }
 
-            if (response.Substring(0, 3) != "OK|")
-                throw new Exception($"Captcha sending error: {response}");
 
-            return response.Remove(0, 3);
         }
-        public string solveCaptcha(string path)
+        private string processResponse(string response, string exceptionMessage)
+        {
+            string status = response.Split('|')[0];
+            if (status == "OK")
+            {
+                string captchaResponse = response.Remove(0, 3);
+                return captchaResponse;
+            }
+            else if (status == "ERROR")
+            {
+                throw new Exception($"{exceptionMessage}: {response}");
+            }
+            else if (status == "CAPCHA_NOT_READY")
+            {
+                return status;
+            }
+            throw new ResponseException($"{exceptionMessage}: {response}");
+        }
+        public string SolveCaptcha(string path)
         {
             captchaId = uploadCaptcha(path);
             Thread.Sleep(10 * 1000);
@@ -79,28 +91,19 @@ namespace API2Captcha
         {
             if (!File.Exists(path))
             {
-                throw new Exception("File doesn't exist");
+                throw new FileNotFoundException("Image was not found.");
             }
             byte[] image = File.ReadAllBytes(path);
-            string response = "";
+
             using (WebClient client = new WebClient())
             {
 
                 client.QueryString.Add("key", key);
-                response = Encoding.Default.GetString(client.UploadFile(settings.url_request, path));
+                string response = Encoding.Default.GetString(client.UploadFile(settings.url_request, path));
+                return processResponse(response, "Captcha uploading error");
             }
-
-            if (response.Substring(0, 3) != "OK|")
-            {
-                throw new Exception($"Captcha uploading error: {response}");
-            }
-            return response.Remove(0, 3);
-
-
-
-
         }
-        public string getResult(string captchaId)
+        private string getResult(string captchaId)
         {
             string response = "";
             for (int i = 0; i <= 10; i++)
@@ -109,21 +112,24 @@ namespace API2Captcha
                 {
                     client.QueryString.Add("key", key);
                     client.QueryString.Add("action", "get");
-
                     client.QueryString.Add("id", captchaId);
-                    //   string url = String.Format("{0}?key={1}&action=get&id={2}", settings.url_response, key, captchaId);
                     response = client.DownloadString(settings.url_response);
+
+                    string captchaResponse = processResponse(response, "Error while getting captcha response");
+                    if (captchaResponse == "CAPCHA_NOT_READY")
+                    {
+                        Thread.Sleep(5 * 1000);
+                    }
+                    else
+                    {
+                        return captchaResponse;
+                    }
                 }
 
-                if (response.Substring(0, 3) == "OK|")
-                {
-                    return response.Remove(0, 3);
-                }
-                else if (response.Contains("ERROR"))
-                {
-                    throw new Exception($"Captcha solve error: {response}");
-                }
-                Thread.Sleep(5 * 1000);
+
+
+
+
             }
 
 
@@ -131,24 +137,18 @@ namespace API2Captcha
         }
 
 
-        public bool reportBadCaptcha(string captchaId)
+        public bool ReportBadCaptcha()
         {
-            string response = "";
+
             using (WebClient client = new WebClient())
             {
                 client.QueryString.Add("key", key);
                 client.QueryString.Add("action", "reportbad");
                 client.QueryString.Add("id", captchaId);
 
-                response = client.DownloadString(settings.url_response);
+                string response = client.DownloadString(settings.url_response);
+                return response.Contains("OK_REPORT_RECORDED");
             }
-
-            if (response.Contains("OK_REPORT_RECORDED"))
-            {
-                return true;
-            }
-            return false;
-
 
         }
 
