@@ -10,6 +10,7 @@ namespace API2Captcha
     {
         private string key;
         private string captchaId;
+        
         public TwoCaptchaApi(string key)
         {
             this.key = key;
@@ -25,7 +26,6 @@ namespace API2Captcha
                     client.QueryString.Add("key", key);
                     client.QueryString.Add("action", "getbalance");
                     response = client.DownloadString(settings.url_response);
-
                     return float.Parse(response);
                 }
             }
@@ -40,15 +40,12 @@ namespace API2Captcha
         {
             captchaId = sendReCaptcha(googleKey, pageUrl);
             Thread.Sleep(15 * 1000);
-
-
             return getResult(captchaId);
 
         }
 
         private string sendReCaptcha(string googleKey, string pageUrl)
         {
-
             using (WebClient client = new WebClient())
             {
                 client.QueryString.Add("key", key);
@@ -58,9 +55,8 @@ namespace API2Captcha
                 string response = client.DownloadString(settings.url_request);
                 return processResponse(response, "ReCaptcha sending error");
             }
-
-
         }
+        
         private string processResponse(string response, string exceptionMessage)
         {
             string status = response.Split('|')[0];
@@ -79,14 +75,14 @@ namespace API2Captcha
             }
             throw new ResponseException($"{exceptionMessage}: {response}");
         }
+        
         public string SolveCaptcha(string path)
         {
             captchaId = uploadCaptcha(path);
             Thread.Sleep(10 * 1000);
             return getResult(captchaId);
-
-
         }
+        
         private string uploadCaptcha(string path)
         {
             if (!File.Exists(path))
@@ -103,6 +99,7 @@ namespace API2Captcha
                 return processResponse(response, "Captcha uploading error");
             }
         }
+        
         private string getResult(string captchaId)
         {
             string response = "";
@@ -125,21 +122,12 @@ namespace API2Captcha
                         return captchaResponse;
                     }
                 }
-
-
-
-
-
             }
-
-
             throw new Exception($"Captcha solve error: {response}");
         }
 
-
         public bool ReportBadCaptcha()
         {
-
             using (WebClient client = new WebClient())
             {
                 client.QueryString.Add("key", key);
@@ -149,9 +137,7 @@ namespace API2Captcha
                 string response = client.DownloadString(settings.url_response);
                 return response.Contains("OK_REPORT_RECORDED");
             }
-
         }
-
     }
 
 
