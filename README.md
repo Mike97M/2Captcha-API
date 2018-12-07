@@ -16,13 +16,13 @@ float balance = api.getBalance();
 ## Solve Captcha
 ```
 TwoCaptchaApi api = new TwoCaptchaApi(<API_KEY>);
-string result = api.solveCaptcha(IMAGE_PATH);
+string result = api.SolveCaptcha(IMAGE_PATH);
 ```
 
 ## Solve ReCaptcha
 ```
 TwoCaptchaApi api = new TwoCaptchaApi(<API_KEY>);
-string result = api.solveReCaptcha(SITE_KEY,SITE_URL);
+string result = api.SolveReCaptcha(SITE_KEY,SITE_URL);
 ```
 
 
